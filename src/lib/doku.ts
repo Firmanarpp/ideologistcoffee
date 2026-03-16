@@ -14,6 +14,8 @@ export async function createDokuPayment(transactionInfo: {
   callbackUrl?: string,
   lineItems?: { name: string, price: number, quantity: number }[]
 }) {
+  const appBaseUrl = process.env.NEXT_PUBLIC_APP_URL ||
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')
   const reqId = uuidv4()
   const timestamp = new Date().toISOString().split('.')[0] + 'Z' // DOKU preferred format
 
@@ -23,7 +25,7 @@ export async function createDokuPayment(transactionInfo: {
       amount: transactionInfo.amount,
       invoice_number: transactionInfo.invoiceNumber,
       currency: "IDR",
-      callback_url: transactionInfo.callbackUrl || "http://localhost:3000/pos", // fallback
+      callback_url: transactionInfo.callbackUrl || `${appBaseUrl}/api/payment/doku-callback`,
       line_items: transactionInfo.lineItems || []
     },
     payment: {

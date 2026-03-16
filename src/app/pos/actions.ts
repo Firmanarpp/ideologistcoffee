@@ -19,6 +19,8 @@ export async function processCheckout(data: {
   }
 }) {
   const supabase = await createClient()
+  const appBaseUrl = process.env.NEXT_PUBLIC_APP_URL ||
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')
 
   // 1. Get current cashier
   const { data: { user } } = await supabase.auth.getUser()
@@ -78,6 +80,7 @@ export async function processCheckout(data: {
         paymentMethod: 'CREDIT_CARD', // generic for DOKU checkout
         customerName: 'Ideologist Coffee Guest',
         customerEmail: 'guest@ideologist.com',
+        callbackUrl: `${appBaseUrl}/api/payment/doku-callback`,
         lineItems: [
           ...data.items.map(item => ({
             name: item.name,
@@ -98,7 +101,7 @@ export async function processCheckout(data: {
         await supabase.from('payments').insert({
           transaction_id: transaction.id,
           provider: 'doku',
-          reference: dokuRes.response.payment.url,
+          reference: transactionCode,
           amount: data.total,
           status: 'pending',
           raw_request: JSON.stringify({ message: "Checkout Requested" }),

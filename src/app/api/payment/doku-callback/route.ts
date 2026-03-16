@@ -1,6 +1,19 @@
 import { verifyDokuSignature } from "@/lib/doku"
-import { createClient } from "@/lib/supabase/server"
+import { createClient } from "@supabase/supabase-js"
 import { NextResponse } from "next/server"
+
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || ""
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ""
+
+function mapDokuStatus(rawStatus: string) {
+  const status = rawStatus.toUpperCase()
+
+  if (["SUCCESS", "PAID", "SETTLEMENT"].includes(status)) return "paid"
+  if (["FAILED", "FAILURE"].includes(status)) return "failed"
+  if (["EXPIRED", "CANCELLED", "VOID", "TIMEOUT"].includes(status)) return "expired"
+
+  return "pending"
+}
 
 export async function POST(request: Request) {
   // We need raw body for signature verification
@@ -13,22 +26,24 @@ export async function POST(request: Request) {
 
   try {
     const payload = JSON.parse(rawBody)
-    const supabase = await createClient()
+    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+      return NextResponse.json({ error: "Missing Supabase service role configuration" }, { status: 500 })
+    }
+
+    // Use service role for callback updates because DOKU calls this endpoint without user auth.
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
     // DOKU Notification Payload typically looks like:
     // { order: { invoice_number: 'TRX-1234', amount: 50000 }, transaction: { status: 'SUCCESS' } }
     
     const invoiceNumber = payload.order?.invoice_number
-    const status = payload.transaction?.status
+    const status = payload.transaction?.status || payload.order?.status || payload.status
 
     if (!invoiceNumber || !status) {
       return NextResponse.json({ error: "Invalid payload format" }, { status: 400 })
     }
 
-    let localStatus = 'pending'
-    if (status === 'SUCCESS' || status === 'PAID') localStatus = 'paid'
-    if (status === 'FAILED') localStatus = 'failed'
-    if (status === 'EXPIRED') localStatus = 'expired'
+    const localStatus = mapDokuStatus(String(status))
 
     // Update transactions table
     const { error: trxError } = await supabase
@@ -45,7 +60,7 @@ export async function POST(request: Request) {
         status: localStatus, 
         updated_at: new Date().toISOString()
       })
-      .eq('reference', invoiceNumber) // adjust correlation if using a different field
+      .eq('reference', invoiceNumber)
 
     return NextResponse.json({ message: "OK" })
 
