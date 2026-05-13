@@ -1,19 +1,5 @@
 -- IDEOLOGIST POS SUPABASE SCHEMA & POLICIES (FRESH SETUP)
 
--- 0. CLEANUP (Optional: Only if you want to start totally fresh)
--- DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
--- DROP FUNCTION IF EXISTS handle_new_user();
--- DROP TABLE IF EXISTS stock_movements;
--- DROP TABLE IF EXISTS payments;
--- DROP TABLE IF EXISTS transaction_items;
--- DROP TABLE IF EXISTS transactions;
--- DROP TABLE IF EXISTS product_addons;
--- DROP TABLE IF EXISTS product_variants;
--- DROP TABLE IF EXISTS products;
--- DROP TABLE IF EXISTS categories;
--- DROP TABLE IF EXISTS settings;
--- DROP TABLE IF EXISTS users;
-
 -- 1. EXTENSIONS
 -- CREATE EXTENSION IF NOT EXISTS "uuid-ossp"; -- Commented out to avoid read-only transaction errors. Usually pre-enabled in Supabase.
 
