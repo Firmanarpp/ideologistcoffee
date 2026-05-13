@@ -282,17 +282,6 @@ DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
---------------------------------------------------------
--- 14. STORAGE CONFIGURATION (Supabase Dashboard Instructions)
---------------------------------------------------------
-/* 
-  NOTE: If you get "permission denied for table buckets", 
-  please create the bucket MANUALLY in the Supabase Dashboard:
-  1. Go to Storage -> New Bucket
-  2. Name it: 'product-images'
-  3. Make it: Public
-  4. Then run the policies below:
-*/
 
 -- 1. Policies for 'product-images' bucket
 -- Allow public access to read images
